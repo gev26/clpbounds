@@ -18,3 +18,13 @@ where the ground truth is known, then on the real JF sample at the coarse
 (Appendix), and finally for welfare-gain bounds.
 
 
+## 5. Software requirements
+
+* **Python** ≥ 3.10
+* **numpy** ≥ 1.24
+* **pandas** ≥ 2.0
+* **scipy** ≥ 1.10 (LP solver `scipy.optimize.linprog`, HiGHS backend)
+* **scikit-learn** ≥ 1.3 (`LassoCV`, `GroupKFold`)
+* **reportlab** ≥ 4.0 (only required to rebuild `CLP_code_manual.pdf`)
+
+
