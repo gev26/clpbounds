@@ -1,7 +1,7 @@
 # Adaptive Estimation of Aggregated Values of Conditional Linear Programs
 This repository includes the replication package of the empirical section and simulation exercise of the paper "Adaptive Estimation of Aggregated Values of Conditional Linear Programs"
 
-We use the Jobs First dataset in line with Kline and Tartari (2016). 
+The paper includes a simulation exercise and an empirical application on Jobs First dataset, analyzed earlier in Kline and Tartari (2016). The goal of the replication package is
 KT use a specific cleaning
 procedure that results in a **4,461-person** sample and their Table 4
 reports the proportions in each latent type. `distribution_over_states.py`
