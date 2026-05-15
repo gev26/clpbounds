@@ -257,8 +257,7 @@ Data preparation files need access to the Jobs First data, which requires an app
   transitions each column allows).
 - `build_A(spec) -> np.ndarray` — assemble the `r × k` constraint
   matrix from a `SPECS` entry; 
-- `verify_A(A, spec)` — sanity check that each row sums to 1 and that
-  the implied conservation equations hold.
+- `verify_A(A, spec)` —  sanity check that A has the expected shape, all entries lie in {−1, 0, +1}, no row or column is entirely zero, and report the rank + non-zero density.
 
 ### First-stage estimators
 
