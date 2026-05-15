@@ -17,7 +17,7 @@ The first-stage nuisance b̂₀(X) = Ê[B | X] is fit on a covariate matrix X wh
 | Regime | # cols | What's included | Files that use it |
 |--------|------:|-----------------|--------------------|
 | **base** | 28 | demographics (age2534, black, hisp, white, marnvr, marapt, hsged, nohsged), kid status (yngchtru, kidcount), 8 pre-baseline quarters of earnings (ernpq1…8), 8 pre-baseline quarters of AFDC receipt (adcpq1…8), applicant flag, prior employment years (yremp). | `CLP_final.py`, `CLP_final_group.py`, `clp_ols.py`, `clp_lasso_appendix.py`, `clp_granular.py`
-| **extended** | ~255 | base + engineered features built by `engineer_features_econ`: squared continuous terms (ernpq²×8, kidcount², yremp², and adcpq² where non-binary), pairwise interactions T1a–T1h (Ern×Ern, AFDC×AFDC, Ern×AFDC same/cross quarter, kidcount/yngchtru/applcant × Ern/AFDC), and demographic-by-economic interactions T2a–T2h (age2534/hsged/nohsged × Ern, hsged/nohsged × AFDC, yremp × Ern/AFDC, kidcount × yngchtru). | Same files as 
+| **extended** | 255 | base + engineered features built by `engineer_features_econ`: squared continuous terms (ernpq²×8, kidcount², yremp², and adcpq² where non-binary), pairwise interactions T1a–T1h (Ern×Ern, AFDC×AFDC, Ern×AFDC same/cross quarter, kidcount/yngchtru/applcant × Ern/AFDC), and demographic-by-economic interactions T2a–T2h (age2534/hsged/nohsged × Ern, hsged/nohsged × AFDC, yremp × Ern/AFDC, kidcount × yngchtru). | Same files as 
 
 ---
 
