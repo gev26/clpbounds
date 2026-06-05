@@ -6,6 +6,8 @@ The empirical section analyzes the Jobs First Connecticut experiment, analyzed e
 
 ## 1. Methodology
 
+We follow Sections 2-5 of the paper. Section 4 includes illustration of the empirical application implemented here.
+
 ## 2. Different Regimes
 
 ---
