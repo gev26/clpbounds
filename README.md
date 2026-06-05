@@ -319,6 +319,5 @@ Data preparation files need access to the Jobs First data, which requires an app
 * **pandas** ≥ 2.0
 * **scipy** ≥ 1.10 (LP solver `scipy.optimize.linprog`, HiGHS backend)
 * **scikit-learn** ≥ 1.3 (`LassoCV`, `GroupKFold`)
-* **reportlab** ≥ 4.0 (only required to rebuild `CLP_code_manual.pdf`)
 
 
