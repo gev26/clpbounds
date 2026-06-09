@@ -1,50 +1,7 @@
 """
 CLP_lasso_appendix_new.py
 =========================
-Self-contained (GitHub-ready) version of `clp_lasso_appendix_v2.py`.
 
-WHY THIS FILE EXISTS
---------------------
-`clp_lasso_appendix_v2.py` is only a thin wrapper: it does
-`import clp_lasso_appendix as legacy`, monkey-patches the corrected
-composite q-vectors and output paths onto that legacy module, then calls
-`legacy.main()`.  That is convenient locally but awkward to publish,
-because reading it requires also reading `clp_lasso_appendix.py` AND the
-LP machinery in `CLP_final.py`.
-
-This file inlines ALL of that machinery so it stands on its own:
-  * LP / dual-vertex code (build_A, enumerate_dual_vertices,
-    clp_estimate, multiplier_bootstrap_ci)            -- was CLP_final.py
-  * data prep / first stage / diagnostics              -- was clp_lasso_appendix.py
-  * the CORRECTED KT composite q-vectors               -- was clp_lasso_appendix_v2.py
-
-The only remaining external dependency is `CLP_granular_final_group`,
-which loads the actual KT `.dta` panel from disk (prepare_jf_data_granular,
-load_table4_mat) and builds the engineered feature set.  Those are data-
-loading utilities tied to the replication package's files, so they are
-imported rather than inlined.
-
-WHAT IS "CORRECTED" RELATIVE TO clp_lasso_appendix.py (v1)
----------------------------------------------------------
-The KT composite q-vectors for TUW (Take-Up Work) and Exit-0r were missing
-cells in v1.  This file uses the KT-Bounds.m-faithful positions:
-
-    TUW    v1 = [1,0,0,1,0,1,0,1,0]   positions {0,3,5,7}
-           v2 = [1,0,0,1,1,1,0,1,0]   positions {0,3,4,5,7}
-                          ^--- beta(0r,1r) restored (Bounds.m line 533)
-
-    Exit   v1 = [0,1,0,0,0,0,0,0,0]   position  {1}
-           v2 = [0,1,0,1,0,1,0,0,0]   positions {1,3,5}
-                       ^---^--- beta(0r,2n), beta(0r,1n) restored
-                                (Bounds.m line 622, "on welfare -> off welfare")
-
-    TUWelf v1 = [1,0,1,0,0,0,1,0,0]   positions {0,2,6}   (already correct)
-
-Consequences (visible in the printed composite table):
-  * TUW becomes point-identified for every config (UB == LB ~= 0.160),
-    because the corrected q_tuw lies in row(A) so T_q has a single vertex.
-  * Exit-0r reports the correct three-transition sum rather than a single
-    transition.
 
 COARSE 5x9 KT SPEC
 ------------------
