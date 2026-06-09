@@ -83,23 +83,17 @@ econ feature set (controlled by X_NONLIN_SCALE).  This makes the econ
 regime genuinely informative on top of the base regime: the first-stage
 R^2 should rise and CLP bounds should tighten in expectation.
 
-mode='full' = in-sample fit on the whole sample (NO cross-fitting;
-biased in general but kept as a diagnostic).
-mode='cv'   = GroupKFold by person (regular CLP first stage required
-for paper-style regularity).
+mode='kfold' = plain KFold cross-fit (observation-level shuffle with
+random_state=seed).  Within-person quarters CAN end up split across
+train and test, so this is the less-conservative cross-fitting regime.
+mode='cv'    = GroupKFold by person (PERSON-LEVEL cross-fit: every
+quarter for a given woman stays in the same fold).  This is the
+more conservative regime when within-person dependence is suspected.
 
-EXPECTED 'full'-mode pathologies (these are NOT bugs):
-  * OLS_full and Ridge_full often produce DEGENERATE widths -- LB equal
-    to UB or even mildly LB > UB -- because the in-sample b_hat is so
-    well-fit that the per-i LP collapses (b_hat[i] ~ B[i] makes the dual
-    vertex selection trivial).  This is precisely WHY CLP requires
-    cross-fitting: the analyst has to use OUT-OF-SAMPLE b_hat to
-    preserve the regularity that justifies the bound formula.
-  * LASSO_full often shrinks heavily, producing low vertex diversity
-    (top-vertex share near 1.0), which makes CLP collapse to the
-    analytical bound regardless of mode.
-The 'cv' modes are the legitimate CLP runs; the 'full' modes serve as
-a diagnostic to make the value of cross-fitting visible.
+The 'kfold' (observation-level) and 'cv' (person-level) modes both
+satisfy CLP regularity (cross-fitting eliminates the in-sample-fit
+bias).  Comparing them quantifies how much the panel's within-person
+dependence affects the bound estimates.
 
 Comparison reported
 -------------------
@@ -123,7 +117,7 @@ import pandas as pd
 from scipy.optimize import linprog
 from sklearn.linear_model import LassoCV, RidgeCV, LinearRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, KFold
 
 warnings.filterwarnings("ignore")
 
@@ -640,35 +634,40 @@ def estimate_b0(B_obs: np.ndarray, X_raw: np.ndarray,
                 estimator: str = "LASSO", mode: str = "cv",
                 K: int = K_FOLDS, seed: int = RANDOM_SEED) -> np.ndarray:
     """
-    First-stage estimator with two modes.
+    First-stage estimator with two cross-fitting modes.
 
-      mode='full'  : fit ONCE on the full sample, predict on the same sample
-                     (in-sample fit, NO cross-fitting).  This is biased in
-                     general -- CLP regularity requires cross-fitting -- but
-                     is included as a diagnostic to show how much the
-                     cross-fit step affects the LP downstream.
-      mode='cv'    : GroupKFold by person with K folds; predict on held-out
-                     fold each time.  This is the regular CLP first stage.
+      mode='kfold' : plain KFold cross-fit at the OBSERVATION level
+                     (shuffle=True, random_state=seed).  Within-person
+                     quarters can be split across train and test folds.
+                     Less conservative when within-person dependence
+                     is suspected, but still cross-fit (CLP regularity
+                     is satisfied).
+      mode='cv'    : GroupKFold by person at the PERSON level: every
+                     quarter for a given woman stays in the same fold.
+                     The standard regime when within-person leakage
+                     is a concern.
 
-    StandardScaler is fit on the training portion only (fit on the full
-    sample in 'full' mode, fit on each train fold in 'cv' mode).
-
-    Returns b_hat (n, k) where k = number of B-components.
+    StandardScaler is fit on each train fold and applied to the test
+    fold.  Returns b_hat (n, k) where k = number of B-components.
     """
     n, k = B_obs.shape
     b_hat = np.zeros((n, k))
 
-    if mode == "full":
-        sc = StandardScaler()
-        Xs = sc.fit_transform(X_raw)
-        for j in range(k):
-            y = B_obs[:, j]
-            if y.std() < 1e-10:
-                b_hat[:, j] = y.mean()
-                continue
-            model = _make_model(estimator, seed)
-            model.fit(Xs, y)
-            b_hat[:, j] = model.predict(Xs)
+    if mode == "kfold":
+        kf = KFold(n_splits=K, shuffle=True, random_state=seed)
+        folds = list(kf.split(np.arange(n)))
+        for tr, te in folds:
+            sc = StandardScaler()
+            X_tr = sc.fit_transform(X_raw[tr])
+            X_te = sc.transform(X_raw[te])
+            for j in range(k):
+                y = B_obs[tr, j]
+                if y.std() < 1e-10:
+                    b_hat[te, j] = y.mean()
+                    continue
+                model = _make_model(estimator, seed)
+                model.fit(X_tr, y)
+                b_hat[te, j] = model.predict(X_te)
         return b_hat
 
     if mode == "cv":
@@ -1082,7 +1081,8 @@ def run_clp(D, state_obs, X, person_id, pscorewt, p_dict,
 
     Args:
       estimator: 'LASSO', 'Ridge', or 'OLS' -- choice of first-stage model.
-      mode:      'full' (in-sample) or 'cv' (GroupKFold cross-fit by person).
+      mode:      'kfold' (observation-level KFold cross-fit) or
+                 'cv'    (person-level GroupKFold cross-fit).
     """
     A_mat = build_A()
     B_obs = compute_B(D, state_obs, pscorewt=pscorewt)
@@ -1091,8 +1091,8 @@ def run_clp(D, state_obs, X, person_id, pscorewt, p_dict,
               f"K={K}, {X.shape[1]} features, {len(np.unique(person_id)):,} "
               f"persons, {len(D):,} obs)")
     else:
-        print(f"\n  CLP first stage: {estimator}  (FULL-SAMPLE in-sample fit, "
-              f"{X.shape[1]} features, {len(D):,} obs) -- diagnostic only")
+        print(f"\n  CLP first stage: {estimator}  (plain KFold, observation-level, "
+              f"K={K}, {X.shape[1]} features, {len(D):,} obs)")
     b_hat = estimate_b0(B_obs, X, person_id, estimator=estimator, mode=mode,
                         K=K, seed=seed)
 
@@ -1221,7 +1221,7 @@ def run_clp(D, state_obs, X, person_id, pscorewt, p_dict,
     # ---- Full diagnostic block (D2 / D3 / D5 / D7) ---------------------
     label = (f"{estimator}_{mode} "
               f"({X.shape[1]} features, "
-              f"{'cross-fit' if mode == 'cv' else 'in-sample'})")
+              f"{'person-level GroupKFold' if mode == 'cv' else 'observation-level KFold'})")
     diag_summary = print_diagnostics(
         label=label,
         b_hat=b_hat, B_obs=B_obs, A_mat=A_mat,
@@ -1394,15 +1394,15 @@ def main():
     #   3 estimators x 2 modes x 2 regimes = 12 configurations total.
     # ---------------------------------------------------------------
     ESTIMATOR_CONFIGS: list = [
-        ("OLS",   "full"),  ("OLS",   "cv"),
-        ("Ridge", "full"),  ("Ridge", "cv"),
-        ("LASSO", "full"),  ("LASSO", "cv"),
+        ("OLS",   "kfold"),  ("OLS",   "cv"),
+        ("Ridge", "kfold"),  ("Ridge", "cv"),
+        ("LASSO", "kfold"),  ("LASSO", "cv"),
     ]
     REGIMES = [("base", X_base), ("econ", X_econ)]
     print(f"\n[STEP 6] CLP bounds across {len(REGIMES)} regimes "
           f"x {len(ESTIMATOR_CONFIGS)} estimator configs = "
           f"{len(REGIMES) * len(ESTIMATOR_CONFIGS)} runs total")
-    print(f"  Note: 'full' modes are diagnostic -- CLP regularity needs cross-fit.")
+    print(f"  Note: 'kfold' = observation-level KFold; 'cv' = person-level GroupKFold.")
 
     def _clip01(x):
         return max(0.0, min(1.0, float(x)))
