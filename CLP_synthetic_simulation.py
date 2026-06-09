@@ -1,53 +1,6 @@
 """
 CLP_synthetic_simulation.py
 ===========================
-Run CLP_final_group's full pipeline on SYNTHETIC data and compare to the
-KT-style analytical bounds.
-
-Why this file exists
---------------------
-Validation/sanity check.  Real JF data has the truth hidden, so we cannot
-verify the CLP bounds against ground truth.  Here we generate synthetic data
-with KNOWN latent flows beta_0 and verify that:
-  1. The CLP plug-in (cross-fit LASSO + per-i LP + multiplier bootstrap)
-     produces bounds that bracket the true beta_0.
-  2. The CLP bounds are tighter than the analytical bounds (per the CLP
-     paper's Jensen-inequality argument: aggregating per-i LP bounds gives
-     tighter than population-level LP).
-  3. The first stage is informative (b_hat(X) tracks the conditional
-     b_0(X) above sampling noise) and the binding-vertex distribution has
-     reasonable spread.
-
-Diagnoses corrected in this revision
-------------------------------------
-(a) TRUE-pi for pi(2u,1r) was reported as 1.2608 (impossible: pi is a
-    conditional probability, must be in [0, 1]).  Cause: the displayed
-    "true pi" was computed as
-        beta_true_kt[j] / src_pop_kt[j],
-    where beta_true_kt is the FULL-population fraction of the relevant
-    latent type but src_pop_kt[j] = p_dict['p21_c'] was estimated from
-    the D=0 sub-sample only.  In finite samples the two differ by O(1/sqrtN)
-    and the ratio can exceed 1 when the D=0 arm under-samples a small type
-    such as 2u (~ 2% of the population).  Fix: compute true source
-    marginals from REALISED TYPES (full population), since under random
-    treatment P^A(s^A) is a population quantity and is NOT estimated from
-    D=0 here -- it is known from the simulation ground truth.
-
-(b) The analytical LP exactly mirrors KT's bound.m / replicating5.py 5x9
-    pi-parameterization (see analytical_lp_bounds for row-by-row notes).
-
-(c) The CLP per-i LP from CLP_final_group picks
-        argmin_v  v . b_hat[i]
-    out of (up to) C(9,5) = 126 candidate dual vertices.  If all i pick
-    the SAME vertex v* then E[v* . B] = v* . E[B] = the analytical bound,
-    i.e. the CLP bound coincides with the analytical bound (no Jensen
-    tightening).  The unique-vertex pathology happens when b_hat(X) is
-    nearly constant across X (covariates have negligible power) OR when
-    the variation lies entirely inside one vertex's optimality cone.  We
-    therefore (i) print binding-vertex histograms for BOTH directions
-    and the cross-fit R^2 per B-component, and (ii) redesign the DGP
-    below so that two X-clusters have CONSERVATION MOMENTS THAT FLIP
-    SIGNS, forcing different vertices to bind in different X-cells.
 
 Synthetic DGP
 -------------
@@ -71,11 +24,8 @@ regimes times six (estimator, mode) combinations:
     mode in         {full, cv}
 
   * BASE regime: 28 base covariates only (matches CLP_final_group COV_VARS).
-  * ECON regime: 28 base + ~400 squared/interaction features (mirrors
-    the empirical ECON spec in CLP_granular_correct_econ.py / 255-feature
-    set; the simulation's exact count is closer to 400 because we include
-    all pairwise interactions, but the methodology is identical).
-
+  * ECON regime: 28 base + ~400 squared/interaction features 
+  
 The DGP's cluster logit has a LINEAR component recoverable from the 28
 base features (controlled by X_MOD_SCALE) and a NONLINEAR component
 (squares and pairwise interactions) that is ONLY recoverable from the
@@ -251,7 +201,7 @@ def compute_type_probs(X, rng):
     Returns (N, N_TYPES) array of per-person type probabilities (each row
     is a convex combination of the two cluster distributions).
 
-    DESIGN NOTE (revised).  The conservation moment at observable cell r
+    The conservation moment at observable cell r
     is
         p^J(r) - p^A(r)  =  (mass of types entering r under JF)
                            - (mass of types leaving r under AFDC).
