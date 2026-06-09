@@ -1,12 +1,7 @@
 """
-welfare_v3_inspect.py
+CLP_welfare.py
 =====================
-Per-vertex inspection of the welfare bounds computed in `welfare_v3.py`.
-Does NOT modify welfare_v3.py — imports all its machinery (state defs,
-specs, build_A, compute_B, compute_delta_table, composite_questions,
-estimate_b0_lasso, _find_feasible_nu, AFDC/JF transfer rules, NU_LO/HI,
-GRANT_BY_SIZE) and adds a parallel inspect step that captures the per-i
-ν vector before aggregating into σ̂.
+
 
 For each (spec ∈ {spec0, spec1, spec5, spec18}) × (composite question) ×
 (mode ∈ {A_use_phase1, B_toss_lp_fail, C_toss_fail_cap}) × (direction):
