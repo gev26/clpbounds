@@ -48,7 +48,7 @@ Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{\nu \
 | **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
 | **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $\nu ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
-| **Drop cap-binder** | Drop observations where the LP solution lies at the box face (max|$\nu$| $\geq$ box − $\epsilon$). These are the observations whose true optimum was in the recession cone. | 
+| **Drop cap-binder** | Drop observations where the LP solution lies at the box face (max $\nu$ $\geq$ box − $\epsilon$). These are the observations whose true optimum was in the recession cone. | 
 | **IQR-trim outliers** | After computing contributions $c_i = \nu_i' B_i$, trim contributions outside 1.5 $\times$ IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
