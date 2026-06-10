@@ -16,43 +16,42 @@ We follow Sections 2-5 of the paper. Section 4 includes illustration of the empi
 
 The first-stage nuisance b̂₀(X) = Ê[B | X] is fit on a covariate matrix X whose construction varies across regimes. The extended set is useful in capturing earnings nonlinearities.
 
-| Regime | # cols | What's included | Files that use it |
-|--------|------:|-----------------|--------------------|
-| **base** | 28 | demographics (age2534, black, hisp, white, marnvr, marapt, hsged, nohsged), kid status (yngchtru, kidcount), 8 pre-baseline quarters of earnings (ernpq1…8), 8 pre-baseline quarters of AFDC receipt (adcpq1…8), applicant flag, prior employment years (yremp). | `CLP_final.py`, `CLP_final_group.py`, `clp_ols.py`, `clp_lasso_appendix.py`, `clp_granular.py`
-| **extended** | 255 | base + engineered features built by `engineer_features_econ`: squared continuous terms (ernpq²×8, kidcount², yremp², and adcpq² where non-binary), pairwise interactions T1a–T1h (Ern×Ern, AFDC×AFDC, Ern×AFDC same/cross quarter, kidcount/yngchtru/applcant × Ern/AFDC), and demographic-by-economic interactions T2a–T2h (age2534/hsged/nohsged × Ern, hsged/nohsged × AFDC, yremp × Ern/AFDC, kidcount × yngchtru). | Same files as 
-
+| Regime | # cols | What's included | 
+|--------|------:|-----------------|
+| **base** | 28 | demographics (age2534, black, hisp, white, marnvr, marapt, hsged, nohsged), kid status (yngchtru, kidcount), 8 pre-baseline quarters of earnings (ernpq1…8), 8 pre-baseline quarters of AFDC receipt (adcpq1…8), applicant flag, prior employment years (yremp). | 
+| **extended** | 255 | base + engineered features built by `engineer_features_econ`: squared continuous terms (ernpq²×8, kidcount², yremp², and adcpq² where non-binary), pairwise interactions T1a–T1h (Ern×Ern, AFDC×AFDC, Ern×AFDC same/cross quarter, kidcount/yngchtru/applcant × Ern/AFDC), and demographic-by-economic interactions T2a–T2h (age2534/hsged/nohsged × Ern, hsged/nohsged × AFDC, yremp × Ern/AFDC, kidcount × yngchtru). | 
 ---
 
 ### 2.2  Cross-fitting Regimes
 
 Defines how the first-stage estimator avoids own-observation contamination of b̂₀(Xᵢ).
 
-| Regime | Split rule | Where person-quarters end up | Files that use it |
-|--------|------------|-------------------------------|--------------------|
-| **full** | No split — fit on all N rows, predict in-sample | (n/a, the same fit is used for every i) | `clp_ols.py` only |
-| **kfold** | `KFold(n_splits=5, shuffle=True, random_state=42)` | Person-quarter rows from the same individual can land in *different* folds (train vs. test) | `CLP_final.py`, `clp_lasso_appendix.py` (`SPLIT_MODES[0]`) |
-| **groupkfold** | `GroupKFold(n_splits=5)` with `groups=person_id` | All quarters of a given individual stay together in either train *or* test | `CLP_final_group.py`, `clp_lasso_appendix.py` (`SPLIT_MODES[1]`), `clp_granular.py` |
+| Regime | Split rule | Where person-quarters end up | 
+|--------|------------|-------------------------------|
+| **full** | No split — fit on all N rows, predict in-sample | (n/a, the same fit is used for every i) | 
+| **kfold** | `KFold(n_splits=5, shuffle=True, random_state=42)` | Person-quarter rows from the same individual can land in *different* folds (train vs. test) | 
+| **groupkfold** | `GroupKFold(n_splits=5)` with `groups=person_id` | All quarters of a given individual stay together in either train *or* test | 
 
 **Trade-off.** `full` produces the smallest predictive variance but introduces overfitting bias into the CLP, which can shrink bounds toward the in-sample mean, safe with OLS on a small base feature set.
-`kfold` is the textbook DR cross-fit and works when person-level dependence is mild. `groupkfold` is the conservative choice: it removes all within-person leakage.
+`kfold` is the textbook DR cross-fit and works when person-level dependence is mild. `groupkfold` is the conservative choice: it removes all within-person leakage and should be taken as the main version with Lasso estimator.
 
 ---
 
 ### 2.3  Vertex-handling Regimes (LP solution approach)
 
-Once b̂₀(Xᵢ) is in hand, the CLP plug-in step requires solving
-`min_{ν ∈ T_q} ν' b̂₀(Xᵢ)` for every observation i, where
+Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving
+`min_{ν ∈ T_q} ν' b̂(Xᵢ)` for every observation i, where
 `T_q = {ν : Aᵀν ≥ q}`. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
 
-| Regime | Description | When it's used |
-|--------|-------------|----------------|
-| **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of `T_q` by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each i, score every vertex and take the argmin. Exact LP optimum. | All files that use coarse 5×9 polytopes: `clp_ols.py`, `clp_lasso_appendix.py`, `CLP_final.py`, `CLP_final_group.py`. |
-| **Per-i LP, box `[−5, 5]`** | Solve `linprog(b̂ᵢ, A_ub=−Aᵀ, b_ub=−q, bounds=[(−5,5)]ᵏ)` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | Granular specs in `clp_granular.py`. Modes A and E. |
-| **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | Granular specs in `clp_granular.py`. Modes B, C, D. |
-| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to ν ≡ 0 (contributes 0 to that observation). Keeps N constant. | Modes A and B. |
-| **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. | Modes C, D, E. |
-| **Drop cap-binder** | Drop observations where the LP solution lies at the box face (`max(|ν|) ≥ box − ε`). These are the observations whose true optimum was in the recession cone. | Modes D, E. |
-| **IQR-trim outliers** | After computing contributions cᵢ = νᵢ' Bᵢ, trim contributions outside 1.5×IQR of the empirical distribution. | Mode C. |
+| Regime | Description | 
+|--------|-------------|
+| **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of `T_q` by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each i, score every vertex and take the argmin. Exact LP optimum. | 
+| **Per-i LP, box `[−5, 5]`** | Solve `linprog(b̂ᵢ, A_ub=−Aᵀ, b_ub=−q, bounds=[(−5,5)]ᵏ)` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | 
+| **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
+| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to ν ≡ 0 (contributes 0 to that observation). Keeps N constant. | 
+| **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
+| **Drop cap-binder** | Drop observations where the LP solution lies at the box face (`max(|ν|) ≥ box − ε`). These are the observations whose true optimum was in the recession cone. | 
+| **IQR-trim outliers** | After computing contributions cᵢ = νᵢ' Bᵢ, trim contributions outside 1.5×IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
 
