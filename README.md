@@ -6,7 +6,7 @@ The empirical section analyzes the Jobs First Connecticut experiment, analyzed e
 
 ## 1. Methodology
 
-We follow Sections 2-5 of the paper. Section 4 includes illustration of the empirical application implemented here.
+We follow Sections 2-5 of the paper. Section 4 includes illustration of the empirical application implemented here. The main files are `CLP_ols.py`, `CLP_synthetic_siulation.py`, `CLP_lasso_appendix.py`, `CLP_granular.py`, `CLP_welfare.py`. These use funcions in the older files `CLP_final.py`, CLP_final_group.py`, `CLP_granular_correct_econ.py`, `CLP_granular_final_combined.py`, `CLP_granular_final_group.py`.
 
 ## 2. Different Regimes
 
