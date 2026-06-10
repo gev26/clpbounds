@@ -39,16 +39,16 @@ Defines how the first-stage estimator avoids own-observation contamination of $\
 
 ### 2.3  Vertex-handling Regimes (LP solution approach)
 
-Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{ν \in T_q} ν' $\hat b(X_i)$ for every observation $i$, where $T_q = {ν : A^Tν ≥ q}$. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
+Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{ν \in T_q} ν' \hat b(X_i)$ for every observation $i$, where $T_q = \{ν : A^Tν ≥ q\}$. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
 
 | Regime | Description | 
 |--------|-------------|
 | **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of $T_q$ by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each $i$, score every vertex and take the argmin. Exact LP optimum. | 
-| **Per-i LP, box `[−5, 5]`** | Solve `linprog(b̂ᵢ, A_ub=−Aᵀ, b_ub=−q, bounds=[(−5,5)]ᵏ)` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | 
+| **Per-i LP, box `[−5, 5]`** | Solve `linprog($\hat b_i, A_{ub}= − A^T, b_{ub} = −q, bounds=[(−5,5)]^k)$` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | 
 | **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
 | **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $ν ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
-| **Drop cap-binder** | Drop observations where the LP solution lies at the box face ($max(|ν|) ≥ box − ε$). These are the observations whose true optimum was in the recession cone. | 
+| **Drop cap-binder** | Drop observations where the LP solution lies at the box face ($max|ν| ≥ box − ε$). These are the observations whose true optimum was in the recession cone. | 
 | **IQR-trim outliers** | After computing contributions $c_i = ν_i' B_i, trim contributions outside 1.5 × IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
