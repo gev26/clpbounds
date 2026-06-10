@@ -49,7 +49,7 @@ Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{\nu \
 | **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $\nu ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
 | **Drop cap-binder** | Drop observations where the LP solution lies at the box face (max|$\nu$| $\geq$ box − $\epsilon$). These are the observations whose true optimum was in the recession cone. | 
-| **IQR-trim outliers** | After computing contributions $c_i = \nu_i' B_i$, trim contributions outside 1.5 $\cross$ IQR of the empirical distribution. | 
+| **IQR-trim outliers** | After computing contributions $c_i = \nu_i' B_i$, trim contributions outside 1.5 $\times$ IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
 
@@ -93,8 +93,8 @@ The researcher is free to choose the granularity regime. However, too much granu
 
 | Regime | Shape | Pooling | 
 |--------|------:|---------|
-| **KT coarse 5×9** | 5 rows $\cross$ 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition $\beta$ parameters spanning the 9 (source, destination) groups G1, ..., G9 with both sides pooled. 
-| **Granular sub-bin (8 specs)** | $5 \cross 13$ to $13 \cross 53$ | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
+| **KT coarse 5×9** | 5 rows $\times$ 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition $\beta$ parameters spanning the 9 (source, destination) groups G1, ..., G9 with both sides pooled. 
+| **Granular sub-bin (8 specs)** | $5 \times 13$ to $13 \times 53$ | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
 
 
 The 9 "G" groups partition the columns of the granular CLP design matrix.
@@ -112,7 +112,7 @@ sub-bin splitting on either side.
 | `u`    | partic = 1, ebin $\in$ {6, 7, 8} | on welfare with above-FPL stated earnings ("underreporter" cell) |
 | `p`    | partic = 1           | on welfare, any earnings bin — used interchangeably with `r`/`u` when row-coarseness allows |
 
-Earnings bins: `0` = zero earnings; `b1, ..., b5` = below FPL (5 sub-bins of width 0.2 $\cross$ FPL); `b6, ..., b8` = above FPL (3 sub-bins above 1.0 $\cross$ FPL); pooled labels `1n`/`1r` cover `b1, ..., b5`, `2n`/`2u` cover `b6, ..., b8`. Low-tail variants: `low_b1n, ..., low_b3n` (and analogous `_r`/`_p`) split the in-FPL range as {b1}, {b2}, {b3 $\union$ b4 $\union$ b5}.
+Earnings bins: `0` = zero earnings; `b1, ..., b5` = below FPL (5 sub-bins of width 0.2 $\times$ FPL); `b6, ..., b8` = above FPL (3 sub-bins above 1.0 $\times$ FPL); pooled labels `1n`/`1r` cover `b1, ..., b5`, `2n`/`2u` cover `b6, ..., b8`. Low-tail variants: `low_b1n, ..., low_b3n` (and analogous `_r`/`_p`) split the in-FPL range as {b1}, {b2}, {b3 $\union$ b4 $\union$ b5}.
 
 **The 9 groups** (source → destination, in canonical Spec 1 form):
 
@@ -151,7 +151,7 @@ The three KT composites are built from G1, G3, G7:
 
 #### Notes
 
-- **Spec 1** is the canonical $13 \cross 33$ layout: 1n source split into 5 sub-bins (b1n, ..., b5n), 2n source split into 3 (b6n, ..., b8n), and 2u source/destination split into 3 (b6u, ..., b8u).
+- **Spec 1** is the canonical $13 \times 33$ layout: 1n source split into 5 sub-bins (b1n, ..., b5n), 2n source split into 3 (b6n, ..., b8n), and 2u source/destination split into 3 (b6u, ..., b8u).
 - **Spec 5** pools the above-FPL on-welfare rows (b6p, ..., b8p) into a single `2p` row but also splits the destination 1r in G3 and G7 into b1r, ..., b5r, giving the widest column count (53).
 - **Spec 8** keeps the G3 dest split but collapses 1n entirely (single `1n` row, no G6/G7 splits) and pools 2p.
 - **Spec 11** is the only KT-coarse-row spec (5 rows) that activates a destination split (G7 dest 1r → b1r, ..., b5r); G3 stays pooled.
@@ -187,7 +187,7 @@ The three KT composites are built from G1, G3, G7:
 
 - **`CLP_synthetic_simulation.py`**.
   Numerical illustration of the CLP estimator on synthetic data with
-  known latent flows $\beta_0$. Generates a $5 \cross 9$-design DGP, runs the full
+  known latent flows $\beta_0$. Generates a $5 \times 9$-design DGP, runs the full
   CLP pipeline, and compares the result to the **analytical KT-style LP
   bounds** on the same population. Uses **OLS, Ridge, and Lasso** as
   three alternative first stages. Verifies (i) that the CLP bounds
@@ -206,7 +206,7 @@ The three KT composites are built from G1, G3, G7:
 
 
 - **`CLP_lasso_appendix.py`**.
-  Implements the bounds estimator for $5 \cross 9$ case with
+  Implements the bounds estimator for $5 \times 9$ case with
   two estimators (**LASSO, Ridge**), two covariate sets (**base, extended**), under
   KFold cross-fitting and GroupKFold cross-fitting by
   person, overall 8 specifications. This replicates **Table B.2** in the Appendix.
