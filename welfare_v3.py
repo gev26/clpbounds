@@ -1,8 +1,6 @@
 """
 welfare_v3.py
 =============
-Welfare-bound estimator that addresses the methodological issues in
-welfare_corrected.py and welfare_sort.py.
 
 Implements three specs:
   spec0  KT 5x9 coarse baseline
@@ -26,37 +24,6 @@ Three-mode diagnostic per (spec, question):
   Mode A "use_phase1"   : on LP failure, substitute Phase-I feasible nu
   Mode B "toss_lp_fail" : on LP failure, DROP the observation
   Mode C "toss_fail_cap": drop LP failures AND cap-binders
-
-
-METHODOLOGY FIXES (compared to welfare_corrected.py / welfare_sort.py)
-======================================================================
-A. CONSTANT Delta_m per transition.  Single dollar value per (src, dst)
-   pair, computed at the IPW-weighted sample means of FPL_monthly and
-   G_bar.  Restores the CLP paper's Section-4 support-function theorem.
-
-B. Wide ν-box [-200, 200] + Q-RESCALING.  We solve the LP at unit-norm
-   q (max |q| = 1) and rescale sigma_hat back to dollars afterward.
-   Combined with Phase-I LP fallback this gives robust LP behavior even
-   when nominal q has entries in the hundreds of dollars.
-
-C. Three-mode honest LP failure handling.  Mode B and Mode C TOSS
-   failed/cap-binding observations rather than substituting fallback
-   values.  All counts surfaced in the output.
-
-D. IPW-WEIGHTED CELL MEANS for earnings.  No more bin-midpoint
-   approximation.  For each observable cell, the earnings used in
-   TotalIncome is the IPW-weighted control-arm mean of earnq/Cbin times
-   FPL_monthly.  For pooled labels (e.g. "1r" = b1r..b5r), the mean is
-   computed jointly across the pool (IPW-weighted) rather than as an
-   unweighted average of cell means.  This is much closer to empirical
-   reality (e.g. 1p has actual mean ~0.285 vs symmetric midpoint 0.5).
-
-F. Consistent A-matrix source.  Specs 0/1/5 here use the standard
-   coarse/granular A matrices (cell-overlap rule), avoiding the
-   silent unidentified-column issue in CLP_underreport_final_group.
-
-G. LP_DIAG counters tracked per (spec, question) and reported in CSV
-   and console.
 
 
 GRANT SCHEDULE (KT Connecticut Jobs First)
