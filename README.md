@@ -6,7 +6,7 @@ The empirical section analyzes the Jobs First Connecticut experiment, analyzed e
 
 ## 1. Methodology
 
-We follow Sections 2-5 of the paper. Section 4 includes illustration of the empirical application implemented here. The main files are `CLP_ols.py`, `CLP_synthetic_siulation.py`, `CLP_lasso_appendix.py`, `CLP_granular.py`, `CLP_welfare.py`. These use funcions in the older files `CLP_final.py`, `CLP_final_group.py`, `CLP_granular_correct_econ.py`, `CLP_granular_final_combined.py`, `CLP_granular_final_group.py`.
+We follow Sections 2-5 of the paper. Section 4 includes illustration of the empirical application implemented here. The main files are `CLP_ols.py`, `CLP_synthetic_siulation.py`, `CLP_lasso_appendix.py`, `CLP_granular.py`, `CLP_welfare.py`. These use funcions in the older versions of the files `CLP_final.py`, `CLP_final_group.py`, `CLP_granular_correct_econ.py`, `CLP_granular_final_combined.py`, `CLP_granular_final_group.py` which I have not migrated to the main ones. 
 
 ## 2. Different Regimes
 
@@ -14,17 +14,17 @@ We follow Sections 2-5 of the paper. Section 4 includes illustration of the empi
 
 ### 2.1  Covariate Regimes
 
-The first-stage nuisance b̂₀(X) = Ê[B | X] is fit on a covariate matrix X whose construction varies across regimes. The extended set is useful in capturing earnings nonlinearities.
+The first-stage nuisance $\hat b(X) = \hat E[B | X]$ is fit on a covariate matrix X whose construction varies across regimes. The extended set is useful in capturing earnings nonlinearities.
 
 | Regime | # cols | What's included | 
 |--------|------:|-----------------|
-| **base** | 28 | demographics (age2534, black, hisp, white, marnvr, marapt, hsged, nohsged), kid status (yngchtru, kidcount), 8 pre-baseline quarters of earnings (ernpq1…8), 8 pre-baseline quarters of AFDC receipt (adcpq1…8), applicant flag, prior employment years (yremp). | 
+| **base** | 28 | demographics (age2534, black, hisp, white, marnvr, marapt, hsged, nohsged), kid status (yngchtru, kidcount), 8 pre-baseline quarters of earnings (ernpq1...8), 8 pre-baseline quarters of AFDC receipt (adcpq1...8), applicant flag, prior employment years (yremp). | 
 | **extended** | 255 | base + engineered features built by `engineer_features_econ`: squared continuous terms (ernpq²×8, kidcount², yremp², and adcpq² where non-binary), pairwise interactions T1a–T1h (Ern×Ern, AFDC×AFDC, Ern×AFDC same/cross quarter, kidcount/yngchtru/applcant × Ern/AFDC), and demographic-by-economic interactions T2a–T2h (age2534/hsged/nohsged × Ern, hsged/nohsged × AFDC, yremp × Ern/AFDC, kidcount × yngchtru). | 
 ---
 
 ### 2.2  Cross-fitting Regimes
 
-Defines how the first-stage estimator avoids own-observation contamination of b̂₀(Xᵢ).
+Defines how the first-stage estimator avoids own-observation contamination of $\hat b(X_i)$.
 
 | Regime | Split rule | Where person-quarters end up | 
 |--------|------------|-------------------------------|
@@ -39,19 +39,17 @@ Defines how the first-stage estimator avoids own-observation contamination of b�
 
 ### 2.3  Vertex-handling Regimes (LP solution approach)
 
-Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving
-`min_{ν ∈ T_q} ν' b̂(Xᵢ)` for every observation i, where
-`T_q = {ν : Aᵀν ≥ q}`. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
+Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{ν \in T_q} ν' $\hat b(X_i)$ for every observation $i$, where $T_q = {ν : A^Tν ≥ q}$. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
 
 | Regime | Description | 
 |--------|-------------|
-| **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of `T_q` by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each i, score every vertex and take the argmin. Exact LP optimum. | 
+| **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of $T_q$ by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each $i$, score every vertex and take the argmin. Exact LP optimum. | 
 | **Per-i LP, box `[−5, 5]`** | Solve `linprog(b̂ᵢ, A_ub=−Aᵀ, b_ub=−q, bounds=[(−5,5)]ᵏ)` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | 
 | **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
-| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to ν ≡ 0 (contributes 0 to that observation). Keeps N constant. | 
+| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $ν ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
-| **Drop cap-binder** | Drop observations where the LP solution lies at the box face (`max(|ν|) ≥ box − ε`). These are the observations whose true optimum was in the recession cone. | 
-| **IQR-trim outliers** | After computing contributions cᵢ = νᵢ' Bᵢ, trim contributions outside 1.5×IQR of the empirical distribution. | 
+| **Drop cap-binder** | Drop observations where the LP solution lies at the box face ($max(|ν|) ≥ box − ε$). These are the observations whose true optimum was in the recession cone. | 
+| **IQR-trim outliers** | After computing contributions $c_i = ν_i' B_i, trim contributions outside 1.5 × IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
 
@@ -74,19 +72,19 @@ recession-cone observations.
 
 ### 2.4  Estimator Regimes
 
-The choice of first-stage learner for b̂₀(X) = Ê[B | X].
+The choice of first-stage learner for $\hat b(X) = \hat E[B | X]$.
 
-| Estimator | Implementation | Hyperparameters | Files |
-|-----------|----------------|-----------------|-------|
-| **OLS** | `sklearn.linear_model.LinearRegression` | none | `CLP_final.py`, `CLP_final_group.py`, `clp_ols.py`, `simulation.py` |
-| **LASSO** | `LassoCV` | `alphas=np.logspace(-4, 1, 30)`, `cv=5`, `eps=1e-4`, `max_iter=4000`, `random_state=42` | `CLP_final.py`, `CLP_final_group.py`, `clp_lasso_appendix.py`, `clp_granular.py`, `simulation.py` |
-| **Ridge** | `RidgeCV` | `alphas=np.logspace(-4, 4, 40)` | same as LASSO |
+| Estimator | Implementation | Hyperparameters | 
+|-----------|----------------|-----------------|
+| **OLS** | `sklearn.linear_model.LinearRegression` | none | 
+| **LASSO** | `LassoCV` | `alphas=np.logspace(-4, 1, 30)`, `cv=5`, `eps=1e-4`, `max_iter=4000`, `random_state=42` | 
+| **Ridge** | `RidgeCV` | `alphas=np.logspace(-4, 4, 40)` | 
 
 
 **Per-component fitting.** All estimators are fit *per B-component*
-(one regression per state j = 0…4). Within each fold, a `StandardScaler`
+(one regression per state $j = 0, .... 4$). Within each fold, a `StandardScaler`
 is fit on the training-fold X and used to transform both train and
-test rows; the response is never scaled.
+test rows.
 
 ---
 
@@ -94,14 +92,14 @@ test rows; the response is never scaled.
 
 The researcher is free to choose the granularity regime. However, too much granularity over the columns weakens identification, adding row constraints helps this. More on granular regimes can be found in the illustration **Section 5** of the paper. 
 
-| Regime | Shape | Pooling | Files |
-|--------|------:|---------|-------|
-| **KT coarse 5×9** | 5 rows × 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition β parameters spanning the 9 (source, destination) groups G1…G9 with both sides pooled. | `clp_ols.py`, `clp_lasso_appendix.py`, `CLP_final.py`, `CLP_final_group.py` |
-| **Granular sub-bin (8 specs)** | 5×13 to 13×53 | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | `clp_granular.py` (runs all 8: spec1, spec5, spec8, spec11, spec13, spec14, spec14_alt, spec18) |
+| Regime | Shape | Pooling | 
+|--------|------:|---------|
+| **KT coarse 5×9** | 5 rows × 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition β parameters spanning the 9 (source, destination) groups G1...G9 with both sides pooled. 
+| **Granular sub-bin (8 specs)** | 5×13 to 13×53 | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
 
 
 The 9 "G" groups partition the columns of the granular CLP design matrix.
-Each column is a β parameter β(s → d) where s is the source state (under
+Each column is a $\beta$ parameter β(s → d) where s is the source state (under
 AFDC counterfactual) and d is the destination state (under JF). Each
 group fixes the (source pattern, destination pattern) up to optional
 sub-bin splitting on either side.
