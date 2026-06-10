@@ -39,17 +39,17 @@ Defines how the first-stage estimator avoids own-observation contamination of $\
 
 ### 2.3  Vertex-handling Regimes (LP solution approach)
 
-Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{ν \in T_q} ν' \hat b(X_i)$ for every observation $i$, where $T_q = \{ν : A^Tν ≥ q\}$. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
+Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{\nu \in T_q} ν' \hat b(X_i)$ for every observation $i$, where $T_q = \{ \nu : A^Tν ≥ q \}$. How this is done depends on the polytope size. In coarse granularity regimes exact min is plausible since vertex set is small, for example C(9,5) = 126 unique vertex candidates. But with more granular regimes this number is much higher.
 
 | Regime | Description | 
 |--------|-------------|
 | **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of $T_q$ by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each $i$, score every vertex and take the argmin. Exact LP optimum. | 
-| **Per-i LP, box `[−5, 5]`** | Solve `linprog($\hat b_i, A_{ub}= − A^T, b_{ub} = −q, bounds=[(−5,5)]^k)$` for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long ν. | 
+| **Per-i LP, box `[−5, 5]`** | Solve linprog($\hat b_i, A_{ub}= − A^T, b_{ub} = −q, bounds=[(−5,5)]^k)$ for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long \nu. | 
 | **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
-| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $ν ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
+| **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $\nu ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
-| **Drop cap-binder** | Drop observations where the LP solution lies at the box face ($max|ν| ≥ box − ε$). These are the observations whose true optimum was in the recession cone. | 
-| **IQR-trim outliers** | After computing contributions $c_i = ν_i' B_i, trim contributions outside 1.5 × IQR of the empirical distribution. | 
+| **Drop cap-binder** | Drop observations where the LP solution lies at the box face ($max|\nu| ≥ box − ε$). These are the observations whose true optimum was in the recession cone. | 
+| **IQR-trim outliers** | After computing contributions $c_i = \nu_i' B_i, trim contributions outside 1.5 × IQR of the empirical distribution. | 
 
 **The 5 named modes in `clp_granular.py`** combine these primitives:
 
@@ -82,7 +82,7 @@ The choice of first-stage learner for $\hat b(X) = \hat E[B | X]$.
 
 
 **Per-component fitting.** All estimators are fit *per B-component*
-(one regression per state $j = 0, .... 4$). Within each fold, a `StandardScaler`
+(one regression per state $j = 0, ..., 4$). Within each fold, a `StandardScaler`
 is fit on the training-fold X and used to transform both train and
 test rows.
 
@@ -94,12 +94,12 @@ The researcher is free to choose the granularity regime. However, too much granu
 
 | Regime | Shape | Pooling | 
 |--------|------:|---------|
-| **KT coarse 5×9** | 5 rows × 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition β parameters spanning the 9 (source, destination) groups G1...G9 with both sides pooled. 
-| **Granular sub-bin (8 specs)** | 5×13 to 13×53 | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
+| **KT coarse 5×9** | 5 rows $\cross$ 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition $\beta$ parameters spanning the 9 (source, destination) groups G1, ..., G9 with both sides pooled. 
+| **Granular sub-bin (8 specs)** | $5 \cross 13$ to $13 \cross 53$ | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
 
 
 The 9 "G" groups partition the columns of the granular CLP design matrix.
-Each column is a $\beta$ parameter β(s → d) where s is the source state (under
+Each column is a $\beta$ parameter $\beta(s \to d)$ where s is the source state (under
 AFDC counterfactual) and d is the destination state (under JF). Each
 group fixes the (source pattern, destination pattern) up to optional
 sub-bin splitting on either side.
@@ -109,8 +109,8 @@ sub-bin splitting on either side.
 | Suffix | Cells (ebin, partic) | Meaning |
 |--------|----------------------|---------|
 | `n`    | partic = 0           | off welfare, with stated earnings bin |
-| `r`    | partic = 1, ebin ∈ {0…5} | on welfare, in- or below-FPL earnings ("truthful" on-welfare cell) |
-| `u`    | partic = 1, ebin ∈ {6,7,8} | on welfare with above-FPL stated earnings ("underreporter" cell) |
+| `r`    | partic = 1, ebin $\in$ {0, ..., 5} | on welfare, in- or below-FPL earnings ("truthful" on-welfare cell) |
+| `u`    | partic = 1, ebin $\in$ {6, 7, 8} | on welfare with above-FPL stated earnings ("underreporter" cell) |
 | `p`    | partic = 1           | on welfare, any earnings bin — used interchangeably with `r`/`u` when row-coarseness allows |
 
 Earnings bins: `0` = zero earnings; `b1…b5` = below FPL (5 sub-bins of width 0.2·FPL); `b6…b8` = above FPL (3 sub-bins above 1.0·FPL); pooled labels `1n`/`1r` cover `b1…b5`, `2n`/`2u` cover `b6…b8`. Low-tail variants: `low_b1n…low_b3n` (and analogous `_r`/`_p`) split the in-FPL range as {b1}, {b2}, {b3 ∪ b4 ∪ b5}.
