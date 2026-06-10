@@ -92,7 +92,7 @@ test rows.
 The researcher is free to choose the granularity regime. However, too much granularity over the columns weakens identification, adding row constraints helps this. More on granular regimes can be found in the illustration **Section 4** of the paper. 
 
 | Regime | Shape | Pooling | 
-|--------|------:|---------|
+|--------|-------------------:|---------|
 | **KT coarse 5×9** | 5 rows $\times$ 9 cols | Single row for each of {0n, 1n, 2n, 0p, 2p}; 9 transition $\beta$ parameters spanning the 9 (source, destination) groups G1, ..., G9 with both sides pooled. 
 | **Granular sub-bin (8 specs)** | $5 \times 13$ to $13 \times 53$ | Spec-by-spec choices over which of the 9 groups get sub-bin splits on the source side, destination side, or both. See the granularity summary table. | 
 
@@ -112,7 +112,7 @@ sub-bin splitting on either side.
 | `u`    | partic = 1, ebin $\in$ {6, 7, 8} | on welfare with above-FPL stated earnings ("underreporter" cell) |
 | `p`    | partic = 1           | on welfare, any earnings bin — used interchangeably with `r`/`u` when row-coarseness allows |
 
-Earnings bins: `0` = zero earnings; `b1, ..., b5` = below FPL (5 sub-bins of width 0.2 $\times$ FPL); `b6, ..., b8` = above FPL (3 sub-bins above 1.0 $\times$ FPL); pooled labels `1n`/`1r` cover `b1, ..., b5`, `2n`/`2u` cover `b6, ..., b8`. Low-tail variants: `low_b1n, ..., low_b3n` (and analogous `_r`/`_p`) split the in-FPL range as {b1}, {b2}, {b3 $\union$ b4 $\union$ b5}.
+Earnings bins: `0` = zero earnings; `b1, ..., b5` = below FPL (5 sub-bins of width 0.2 $\times$ FPL); `b6, ..., b8` = above FPL (3 sub-bins above 1.0 $\times$ FPL); pooled labels `1n`/`1r` cover `b1, ..., b5`, `2n`/`2u` cover `b6, ..., b8`. Low-tail variants: `low_b1n, ..., low_b3n` (and analogous `_r`/`_p`) split the in-FPL range as {b1}, {b2}, {b3 $\cup$ b4 $\cup$ b5}.
 
 **The 9 groups** (source → destination, in canonical Spec 1 form):
 
