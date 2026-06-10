@@ -44,7 +44,7 @@ Once $\hat b(X_i)$ is in hand, the CLP plug-in step requires solving $min_{\nu \
 | Regime | Description | 
 |--------|-------------|
 | **Vertex enumeration** | Enumerate all C(d, k) candidate vertices of $T_q$ by solving the basic feasible problem on every k-subset of d columns (drop singular, drop infeasible). For each $i$, score every vertex and take the argmin. Exact LP optimum. | 
-| **Per-i LP, box `[−5, 5]`** | Solve linprog($\hat b_i$, $A_{ub}= − A^T$, $b_{ub} = −q$, bounds=$[(−5,5)]^k$) for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long $\nu$. | 
+| **Per-i LP, box `[−5, 5]`** | Solve linprog($\hat b_i$, $A_{ub}= − A^T$, $b_{ub} = −q$, bounds=[(−5,5)]ᵏ) for each i. The narrow box bounds the LP and rules out unbounded recession directions, at the cost of clipping the true optimum when the LP wants a long $\nu$. | 
 | **Per-i LP, box `[−200, 200]`** | Same as above but with a wider box. Closer to the true LP, but more observations end up at the box face (cap-binders). | 
 | **Constant fallback** | If the per-i LP errors or comes back with a zero vector, fall back to $\nu ≡ 0$ (contributes 0 to that observation). Keeps N constant. | 
 | **Drop-fail** | If the per-i LP errors, drop that observation entirely. Lowers N but avoids biasing toward zero. |
