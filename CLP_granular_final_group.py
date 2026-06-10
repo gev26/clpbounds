@@ -1,17 +1,7 @@
 """
 CLP_granular_final_group.py
 ============================
-CLP estimator (Semenova 2026) applied to the Kline-Tartari (2016) Jobs First
-data with a GRANULAR 9-bin income classification, combined with economically
-motivated feature engineering.
 
-Runs CLP bounds with 6 configurations:
-  {base, econ} x {LASSO, Ridge, OLS}
-
-where:
-  "base" = 28 original covariates
-  "econ" = 28 base + 227 economically motivated interaction/quadratic features
-           (255 total)
 
 All estimators use 5-fold GroupKFold cross-fitting (grouped by person).
 All quarters of the same person are held out together, preventing data leakage across person-quarters.
