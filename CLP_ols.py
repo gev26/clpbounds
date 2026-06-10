@@ -1,58 +1,6 @@
 """
 clp_ols_new.py
-==============
-EXACT clone of CLP_final_OLS_variants.py with ONE change: the source
-marginal P^a(s) — used for both (a) the β→π conversion of individual
-cells and (b) the q-vector normalization of KT composites (TUW, TUWelf,
-Exit 0r) — is computed from the SAMPLE via Horvitz–Thompson IPW on the
-AFDC arm, rather than read from KT's pre-computed Table 4
-(`Table4_mat_python.txt`).
 
-Motivation
-----------
-`CLP_final_OLS_variants.py` reads `table4_p['p00_c']`, `p01_c`, `p10_c`,
-`p20_c`, `p21_c` from the KT replication `.mat` file and uses them
-everywhere a source marginal is needed.  These are accurate but they
-come from KT's own filtered sample (their Stata code on the full
-pre-filtered data) and differ from in-sample IPW estimates by ~0.4%.
-
-`clp_ols.py` already uses sample IPW for the per-cell β→π conversion,
-but inconsistently — it still imports KT's `p_kt` for the composite
-q-vector denominators.
-
-This file implements the **internally consistent** sample-IPW variant
-of CLP_final_OLS_variants: every place that needed P^a(s) now reads
-the same in-sample IPW estimator built from the current `(D, state_obs,
-pscorewt)` triple.
-
-What is identical to CLP_final_OLS_variants.py
-----------------------------------------------
-- The four OLS specs (spec1_full_panel, spec2_cross_section,
-  spec3_groupkfold, spec4_cov_subsets)
-- The first-stage estimators (estimate_b0_no_split, estimate_b0_groupkfold)
-- The A matrix (CLP_final.build_A())
-- The B-vector definition (CLP_final.compute_B)
-- The CLP plug-in (CLP_final.clp_estimate via vertex enumeration)
-- The person-clustered Exp(1) multiplier bootstrap
-- The KT composite q vectors (TUW, TUWelf, Exit) at positions
-  {0,3,4,5,7}, {0,2,6}, {1,3,5} respectively — these are the KT-faithful
-  q vectors that include β(0r,1r), matching Bounds.m
-
-What is different
------------------
-- Every reference to `table4_p['p**_c']` is replaced by the IPW estimate
-  `ipw_source_marginal(state_code, D, state_obs, pi)`
-- The `pi` propensity score is derived from `pscorewt` and `D` (the same
-  formula as clp_ols.py: pi = 1/pscorewt if D=1 else 1 - 1/pscorewt,
-  clipped to [0.02, 0.98]).
-
-Outputs
--------
-Same console layout as CLP_final_OLS_variants.py.  No files written.
-
-Usage
------
-    python3 clp_ols_new.py
 """
 
 import sys
